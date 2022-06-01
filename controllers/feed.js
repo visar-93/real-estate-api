@@ -1,56 +1,66 @@
+const fs = require('fs');
+const path = require('path');
 const { validationResult } = require("express-validator/check");
 const Post = require("../models/post");
 
+// Retrieve all posts
 exports.getPosts = (req, res, next) => {
-    const posts = Post.find()
-    .then(result => {
-        res.status(200).json({
-            posts: result
-        })
+  Post.find()
+    .then((posts) => {
+      res.status(200).json({
+        message: "Fetched posts successfully.",
+        posts: posts,
+      });
     })
-    .catch(err => {
-        console.log(err);
-    })
-//   res.status(200).json({
-//     posts: [
-//       {
-//         title: "Shtepia ne shitje",
-//         address: {
-//           city: "Prishtine",
-//           state: "Kosova",
-//           neighborhood: "Dodona",
-//           street: "Afrim Loxha",
-//           number: 7,
-//         },
-//         rooms: {
-//           livingRoom: 1,
-//           kitchen: 1,
-//           bathrooms: 3,
-//           bedrooms: 4,
-//           depo: 1,
-//           balcony: 4,
-//           garden_square: 20,
-//         },
-//         furnished: true,
-//         price: 200000,
-//         category_rs: "sale",
-//         category_usage: "residential",
-//         property_type: "house",
-//         description: "Shtepia ne shitje shtepia ne shitje shtepia ne shitje",
-//         pictures: "imagesistockphoto-1337434489-170667a.jpg",
-//       },
-//     ],
-//   });
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
 };
 
+// Retrieve single post
+exports.getPost = (req, res, next) => {
+  const postId = req.params.postId;
+
+  Post.findById(postId)
+    .then((post) => {
+      if (!post) {
+        const error = new Error("Could not find post.");
+        error.statusCode = 404;
+        throw error;
+      }
+      res.status(200).json({
+        message: "Post fetched.",
+        post: post,
+      });
+    })
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
+// Create a post
 exports.createPost = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(422).json({
-      message: "Validation failed, entered data is incorrect.",
-      errors: errors.array(),
-    });
+    const error = new Error("Validation failed, entered data is incorrect.");
+    error.statusCode = 422;
+    throw error;
   }
+
+  //   if(!req.file) {
+  //       const error = new Error("No image provided.");
+  //       error.statusCode = 422;
+  //       throw error;
+  //   }
+
+  //   const imageUrl = req.file.path;
+
   const title = req.body.title;
   const city = req.body.address.city;
   const state = req.body.address.state || "";
@@ -70,37 +80,10 @@ exports.createPost = (req, res, next) => {
   const category_usage = req.body.category_usage;
   const property_type = req.body.property_type;
   const description = req.body.description;
-//   const pictures = req.body.pictures;
-
+  const pictures = req.body.pictures;
 
   // Create post in db
-//   const post = new Post({
-//     title: "Shtepia ne shitje",
-//     address: {
-//       city: "Prishtine",
-//       state: "Kosova",
-//       neighborhood: "Dodona",
-//       street: "Afrim Loxha",
-//       number: 7,
-//     },
-//     rooms: {
-//       livingRoom: 1,
-//       kitchen: 1,
-//       bathrooms: 3,
-//       bedrooms: 4,
-//       depo: 1,
-//       balcony: 4,
-//       garden_square: 20,
-//     },
-//     furnished: true,
-//     price: 200000,
-//     category_rs: "sale",
-//     category_usage: "residential",
-//     property_type: "house",
-//     description: "Shtepia ne shitje shtepia ne shitje shtepia ne shitje",
-//     pictures: "imagesistockphoto-1337434489-170667a.jpg",
-//   });
-const post = new Post({
+  const post = new Post({
     title: title,
     address: {
       city: city,
@@ -124,9 +107,9 @@ const post = new Post({
     category_usage: category_usage,
     property_type: property_type,
     description: description,
-    pictures: "imagesistockphoto-1337434489-170667a.jpg",
+    pictures: pictures,
   });
-  return post
+  post
     .save()
     .then((result) => {
       res.status(201).json({
@@ -135,6 +118,135 @@ const post = new Post({
       });
     })
     .catch((err) => {
-      console.log(err);
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
     });
 };
+
+// Update post
+exports.updatePost = (req, res, next) => {
+  const postId = req.params.postId;
+
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    const error = new Error("Validation failed, entered data is incorrect.");
+    error.statusCode = 422;
+    throw error;
+  }
+
+  const title = req.body.title;
+  const city = req.body.address.city;
+  const state = req.body.address.state || "";
+  const neighborhood = req.body.address.neighborhood;
+  const street = req.body.address.street;
+  const number = req.body.address.number || 0;
+  const livingRoom = req.body.rooms.livingRoom || 0;
+  const kitchen = req.body.rooms.kitchen || 0;
+  const bathrooms = req.body.rooms.bathrooms || 0;
+  const bedrooms = req.body.rooms.bathrooms || 0;
+  const depo = req.body.rooms.depo || 0;
+  const balcony = req.body.rooms.balcony || 0;
+  const garden_square = req.body.rooms.garden_square || 0;
+  const furnished = req.body.furnished;
+  const price = req.body.price;
+  const category_rs = req.body.category_rs;
+  const category_usage = req.body.category_usage;
+  const property_type = req.body.property_type;
+  const description = req.body.description;
+  let pictures = req.body.pictures;
+
+  //   if(req.file) {
+  //       pictures = req.file.path;
+  //   }
+  //   if(!pictures) {
+  //       const error = new Error('No file picked.');
+  //       error.statusCode = 422;
+  //       throw error;
+  //   }
+
+  Post.findById(postId)
+    .then((post) => {
+      if (!post) {
+        const error = new Error("Could not find post.");
+        error.statusCode = 404;
+        throw error;
+      }
+
+    //   if(picture !== post.pictures) {
+    //       clearImage(post.pictures)
+    //   }
+
+      post.title = title;
+      post.address.city = city;
+      post.address.state = state;
+      post.address.neighborhood = neighborhood;
+      post.address.street = street;
+      post.address.number = number;
+      post.rooms.livingRoom = livingRoom;
+      post.rooms.kitchen = kitchen;
+      post.rooms.bathrooms = bathrooms;
+      post.rooms.bedrooms = bedrooms;
+      post.rooms.depo = depo;
+      post.rooms.balcony = balcony;
+      post.rooms.garden_square = garden_square;
+      post.furnished = furnished;
+      post.price = price;
+      post.category_rs = category_rs;
+      post.category_usage = category_usage;
+      post.property_type = property_type;
+      post.description = description;
+      post.pictures = pictures;
+      return post.save();
+    })
+    .then(result => {
+        res.status(200).json({
+            message: 'Post updated!',
+            post: result
+        });
+    })
+    .catch((err) => {
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
+};
+
+// Delete a post
+exports.deletePost = (req, res, next) => {
+    const postId = req.params.postId;
+
+    Post.findById(postId)
+    .then(post => {
+        if (!post) {
+            const error = new Error("Could not find post.");
+            error.statusCode = 404;
+            throw error;
+          }
+        // clearImage(post.pictures);
+        
+        return Post.findByIdAndRemove(postId);
+    }) 
+    .then(result => {
+        console.log(result);
+        res.status(200).json({
+            message: 'Deleted post.'
+        });
+    })
+    .catch((err) => {
+        if (!err.statusCode) {
+          err.statusCode = 500;
+        }
+        next(err);
+      });
+};
+
+const clearImage = (filePath) => {
+    filePath = path.join(__dirname, "..", filePath);
+    fs.unlink(filePath, (err) => {
+      console.log(err);
+    });
+  };
+  
