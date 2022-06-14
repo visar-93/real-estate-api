@@ -2,17 +2,16 @@ const fs = require('fs');
 const path = require('path');
 const { validationResult } = require("express-validator/check");
 const Post = require("../models/post");
+const User = require('../models/user');
 
 // Retrieve all posts
 exports.getPosts = (req, res, next) => {
     const currentPage = req.query.page || 1;
-    console.log(currentPage);
     const perPage = 3;
     let totalItems;
     Post.find()
     .countDocuments()
     .then(count => {
-        console.log(count)
         totalItems = count;
         return Post.find()
         .skip((currentPage - 1) * perPage)
@@ -95,7 +94,7 @@ exports.createPost = (req, res, next) => {
   const property_type = req.body.property_type;
   const description = req.body.description;
   const pictures = req.body.pictures;
-
+  let creator;
   // Create post in db
   const post = new Post({
     title: title,
@@ -122,13 +121,26 @@ exports.createPost = (req, res, next) => {
     property_type: property_type,
     description: description,
     pictures: pictures,
+    creator: req.userId
   });
   post
     .save()
+    .then(result => {
+      return User.findById(req.userId);
+    })
+    .then(user => {
+      creator = user;
+      user.posts.push(post);
+      return user.save()
+    })
     .then((result) => {
       res.status(201).json({
         message: "Post created successfully!",
-        post: result,
+        post: post,
+        creator: {
+          _id: creator._id,
+          username: creator.username
+        }
       });
     })
     .catch((err) => {
