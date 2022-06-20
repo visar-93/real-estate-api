@@ -96,13 +96,13 @@ const postSchema = new Schema(
       type: String,
       required: true,
     },
-    pictures: [
+    pictures:[
       // it stores pictures of a property
       {
         type: String,
         required: true,
-      },
-    ],
+      }
+    ],    
     creator: {
       type: Schema.Types.ObjectId,
       ref: "User",

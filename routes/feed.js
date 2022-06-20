@@ -15,28 +15,28 @@ router.get('/post/:postId', feedController.getPost);
 // POST /feed/post - creates a single post
 router.post('/post', 
 isAuth,
-[
-    body('title').trim().isLength({min: 5, max: 30}),
-    body('address.city').trim().not().isEmpty().isLength({min: 4, max: 30}),
-    body('address.state').trim().isLength({min: 5, max: 30}),
-    body('address.neighborhood').trim().not().isEmpty().isLength({min: 5, max: 30}),
-    body('address.street').trim().not().isEmpty().isLength({min: 5, max: 30}),
-    body('description').trim().isLength({min:5})
-],
+// [
+//     body('title').trim().isLength({min: 5, max: 30}),
+//     body('address.city').trim().not().isEmpty().isLength({min: 4, max: 30}),
+//     body('address.state').trim().isLength({min: 5, max: 30}),
+//     body('address.neighborhood').trim().not().isEmpty().isLength({min: 5, max: 30}),
+//     body('address.street').trim().not().isEmpty().isLength({min: 5, max: 30}),
+//     body('description').trim().isLength({min:5})
+// ],
 feedController.createPost
 );
 
 // PUT /feed/post/postId - update a single post
 router.put('/post/:postId',
 isAuth, 
-[
-    body('title').trim().isLength({min: 5, max: 30}),
-    body('address.city').trim().not().isEmpty().isLength({min: 5, max: 30}),
-    body('address.state').trim().isLength({min: 5, max: 30}),
-    body('address.neighborhood').trim().not().isEmpty().isLength({min: 5, max: 30}),
-    body('address.street').trim().not().isEmpty().isLength({min: 5, max: 30}),
-    body('description').trim().isLength({min:5})
-],
+// [
+//     body('title').trim().isLength({min: 5, max: 30}),
+//     body('address.city').trim().not().isEmpty().isLength({min: 5, max: 30}),
+//     body('address.state').trim().isLength({min: 5, max: 30}),
+//     body('address.neighborhood').trim().not().isEmpty().isLength({min: 5, max: 30}),
+//     body('address.street').trim().not().isEmpty().isLength({min: 5, max: 30}),
+//     body('description').trim().isLength({min:5})
+// ],
 feedController.updatePost
 );
 

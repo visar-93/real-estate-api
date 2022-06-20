@@ -1,28 +1,28 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
+const path = require("path");
 const { validationResult } = require("express-validator/check");
 const Post = require("../models/post");
-const User = require('../models/user');
+const User = require("../models/user");
 
 // Retrieve all posts
 exports.getPosts = (req, res, next) => {
-    const currentPage = req.query.page || 1;
-    const perPage = 3;
-    let totalItems;
-    Post.find()
+  const currentPage = req.query.page || 1;
+  const perPage = 3;
+  let totalItems;
+  Post.find()
     .countDocuments()
-    .then(count => {
-        totalItems = count;
-        return Post.find()
+    .then((count) => {
+      totalItems = count;
+      return Post.find()
         .skip((currentPage - 1) * perPage)
-        .limit(perPage)
+        .limit(perPage);
     })
     .then((posts) => {
       res.status(200).json({
         message: "Fetched posts successfully.",
         posts: posts,
         totalItems: totalItems,
-        perPage: perPage
+        perPage: perPage,
       });
     })
     .catch((err) => {
@@ -65,35 +65,43 @@ exports.createPost = (req, res, next) => {
     error.statusCode = 422;
     throw error;
   }
-
-  //   if(!req.file) {
-  //       const error = new Error("No image provided.");
-  //       error.statusCode = 422;
-  //       throw error;
-  //   }
+  // console.log("request.files: ",req.files)
+  if (!req.files) {
+    const error = new Error("No image provided.");
+    error.statusCode = 422;
+    throw error;
+  }
 
   //   const imageUrl = req.file.path;
 
   const title = req.body.title;
-  const city = req.body.address.city;
-  const state = req.body.address.state || "";
-  const neighborhood = req.body.address.neighborhood;
-  const street = req.body.address.street;
-  const number = req.body.address.number || 0;
-  const livingRoom = req.body.rooms.livingRoom || 0;
-  const kitchen = req.body.rooms.kitchen || 0;
-  const bathrooms = req.body.rooms.bathrooms || 0;
-  const bedrooms = req.body.rooms.bathrooms || 0;
-  const depo = req.body.rooms.depo || 0;
-  const balcony = req.body.rooms.balcony || 0;
-  const garden_square = req.body.rooms.garden_square || 0;
+  const city = req.body.city;
+  const state = req.body.state || "";
+  const neighborhood = req.body.neighborhood;
+  const street = req.body.street;
+  const number = req.body.number || 0;
+  const livingRoom = req.body.livingRoom || 0;
+  const kitchen = req.body.kitchen || 0;
+  const bathrooms = req.body.bathrooms || 0;
+  const bedrooms = req.body.bathrooms || 0;
+  const depo = req.body.depo || 0;
+  const balcony = req.body.balcony || 0;
+  const garden_square = req.body.garden_square || 0;
   const furnished = req.body.furnished;
   const price = req.body.price;
   const category_rs = req.body.category_rs;
   const category_usage = req.body.category_usage;
   const property_type = req.body.property_type;
   const description = req.body.description;
-  const pictures = req.body.pictures;
+  // console.log('req.files[0]: ', req.files[0].path)
+  let pictures = [];
+
+  for (let i = 0; i < req.files.length; i++) {
+    console.log(req.files[i])
+    pictures[i] = req.files[i].path.replace("\\", "/");
+  }
+
+  // console.log("pictures:  ",pictures)
   let creator;
   // Create post in db
   const post = new Post({
@@ -121,17 +129,17 @@ exports.createPost = (req, res, next) => {
     property_type: property_type,
     description: description,
     pictures: pictures,
-    creator: req.userId
+    creator: req.userId,
   });
   post
     .save()
-    .then(result => {
+    .then((result) => {
       return User.findById(req.userId);
     })
-    .then(user => {
+    .then((user) => {
       creator = user;
       user.posts.push(post);
-      return user.save()
+      return user.save();
     })
     .then((result) => {
       res.status(201).json({
@@ -139,8 +147,8 @@ exports.createPost = (req, res, next) => {
         post: post,
         creator: {
           _id: creator._id,
-          username: creator.username
-        }
+          username: creator.username,
+        },
       });
     })
     .catch((err) => {
@@ -156,6 +164,7 @@ exports.updatePost = (req, res, next) => {
   const postId = req.params.postId;
 
   const errors = validationResult(req);
+  console.log(errors);
   if (!errors.isEmpty()) {
     const error = new Error("Validation failed, entered data is incorrect.");
     error.statusCode = 422;
@@ -181,16 +190,16 @@ exports.updatePost = (req, res, next) => {
   const category_usage = req.body.category_usage;
   const property_type = req.body.property_type;
   const description = req.body.description;
-  let pictures = req.body.pictures;
+  let pictures = req.body.image;
 
-  //   if(req.file) {
-  //       pictures = req.file.path;
-  //   }
-  //   if(!pictures) {
-  //       const error = new Error('No file picked.');
-  //       error.statusCode = 422;
-  //       throw error;
-  //   }
+  if (req.file) {
+    pictures = req.file.path.replace("\\", "/");
+  }
+  if (!pictures) {
+    const error = new Error("No file picked.");
+    error.statusCode = 422;
+    throw error;
+  }
 
   Post.findById(postId)
     .then((post) => {
@@ -199,10 +208,15 @@ exports.updatePost = (req, res, next) => {
         error.statusCode = 404;
         throw error;
       }
+      if (post.creator.toString() !== req.userId) {
+        const error = new Error("Not authorized to do this operation!");
+        error.statusCode = 403;
+        throw error;
+      }
 
-    //   if(picture !== post.pictures) {
-    //       clearImage(post.pictures)
-    //   }
+      // if(pictures !== post.pictures) {
+      //     clearImage(post.pictures)
+      // }
 
       post.title = title;
       post.address.city = city;
@@ -226,11 +240,11 @@ exports.updatePost = (req, res, next) => {
       post.pictures = pictures;
       return post.save();
     })
-    .then(result => {
-        res.status(200).json({
-            message: 'Post updated!',
-            post: result
-        });
+    .then((result) => {
+      res.status(200).json({
+        message: "Post updated!",
+        post: result,
+      });
     })
     .catch((err) => {
       if (!err.statusCode) {
@@ -242,37 +256,46 @@ exports.updatePost = (req, res, next) => {
 
 // Delete a post
 exports.deletePost = (req, res, next) => {
-    const postId = req.params.postId;
+  const postId = req.params.postId;
 
-    Post.findById(postId)
-    .then(post => {
-        if (!post) {
-            const error = new Error("Could not find post.");
-            error.statusCode = 404;
-            throw error;
-          }
-        // clearImage(post.pictures);
-        
-        return Post.findByIdAndRemove(postId);
-    }) 
-    .then(result => {
-        console.log(result);
-        res.status(200).json({
-            message: 'Deleted post.'
-        });
+  Post.findById(postId)
+    .then((post) => {
+      if (!post) {
+        const error = new Error("Could not find post.");
+        error.statusCode = 404;
+        throw error;
+      }
+      if (post.creator.toString() !== req.userId) {
+        const error = new Error("Not authorized to do this operation!");
+        error.statusCode = 403;
+        throw error;
+      }
+      clearImage(post.pictures);
+      return Post.findByIdAndRemove(postId);
+    })
+    .then((result) => {
+      return User.findById(req.userId);
+    })
+    .then((user) => {
+      user.posts.pull(postId);
+      return user.save();
+    })
+    .then((result) => {
+      res.status(200).json({
+        message: "Deleted post.",
+      });
     })
     .catch((err) => {
-        if (!err.statusCode) {
-          err.statusCode = 500;
-        }
-        next(err);
-      });
+      if (!err.statusCode) {
+        err.statusCode = 500;
+      }
+      next(err);
+    });
 };
 
 const clearImage = (filePath) => {
-    filePath = path.join(__dirname, "..", filePath);
-    fs.unlink(filePath, (err) => {
-      console.log(err);
-    });
-  };
-  
+  filePath = path.join(__dirname, "..", filePath);
+  fs.unlink(filePath, (err) => {
+    console.log(err);
+  });
+};
