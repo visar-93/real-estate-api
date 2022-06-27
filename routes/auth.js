@@ -17,12 +17,14 @@ router.put("/signup", [
           }
       });
   })
-  .normalizeEmail(),
+  .normalizeEmail(), // this method will remove dots "." from email, sometimes it can cause trou
   body('password').trim().isLength({min: 5}),
   body('username').trim().not().isEmpty()  
 ],
 authController.signup);
 
 router.post('/login', authController.login);
+
+router.put('/logout', authController.logout);
 
 module.exports = router;

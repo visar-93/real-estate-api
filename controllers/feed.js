@@ -97,11 +97,9 @@ exports.createPost = (req, res, next) => {
   let pictures = [];
 
   for (let i = 0; i < req.files.length; i++) {
-    console.log(req.files[i])
     pictures[i] = req.files[i].path.replace("\\", "/");
   }
 
-  // console.log("pictures:  ",pictures)
   let creator;
   // Create post in db
   const post = new Post({
@@ -161,10 +159,9 @@ exports.createPost = (req, res, next) => {
 
 // Update post
 exports.updatePost = (req, res, next) => {
+  const errors = validationResult(req);
   const postId = req.params.postId;
 
-  const errors = validationResult(req);
-  console.log(errors);
   if (!errors.isEmpty()) {
     const error = new Error("Validation failed, entered data is incorrect.");
     error.statusCode = 422;
@@ -172,28 +169,30 @@ exports.updatePost = (req, res, next) => {
   }
 
   const title = req.body.title;
-  const city = req.body.address.city;
-  const state = req.body.address.state || "";
-  const neighborhood = req.body.address.neighborhood;
-  const street = req.body.address.street;
-  const number = req.body.address.number || 0;
-  const livingRoom = req.body.rooms.livingRoom || 0;
-  const kitchen = req.body.rooms.kitchen || 0;
-  const bathrooms = req.body.rooms.bathrooms || 0;
-  const bedrooms = req.body.rooms.bathrooms || 0;
-  const depo = req.body.rooms.depo || 0;
-  const balcony = req.body.rooms.balcony || 0;
-  const garden_square = req.body.rooms.garden_square || 0;
+  const city = req.body.city;
+  const state = req.body.state || "";
+  const neighborhood = req.body.neighborhood;
+  const street = req.body.street;
+  const number = req.body.number || 0;
+  const livingRoom = req.body.livingRoom || 0;
+  const kitchen = req.body.kitchen || 0;
+  const bathrooms = req.body.bathrooms || 0;
+  const bedrooms = req.body.bathrooms || 0;
+  const depo = req.body.depo || 0;
+  const balcony = req.body.balcony || 0;
+  const garden_square = req.body.garden_square || 0;
   const furnished = req.body.furnished;
   const price = req.body.price;
   const category_rs = req.body.category_rs;
   const category_usage = req.body.category_usage;
   const property_type = req.body.property_type;
   const description = req.body.description;
-  let pictures = req.body.image;
+  let pictures = [];
 
-  if (req.file) {
-    pictures = req.file.path.replace("\\", "/");
+  if (req.files) {
+    for (let i = 0; i < req.files.length; i++) {
+      pictures[i] = req.files[i].path.replace("\\", "/");
+    }
   }
   if (!pictures) {
     const error = new Error("No file picked.");
@@ -214,9 +213,16 @@ exports.updatePost = (req, res, next) => {
         throw error;
       }
 
-      // if(pictures !== post.pictures) {
-      //     clearImage(post.pictures)
-      // }
+      for(let i = 0; i < pictures.length && i < post.pictures; i++) {
+        if(pictures[i] !== post.pictures[i]) {
+          clearImage(post.pictures[i]);
+        }
+      }
+
+      // console.log('post.pictures: ', post.pictures)
+      for(let image of post.pictures) {
+        clearImage(image)
+      }
 
       post.title = title;
       post.address.city = city;
@@ -270,7 +276,10 @@ exports.deletePost = (req, res, next) => {
         error.statusCode = 403;
         throw error;
       }
-      clearImage(post.pictures);
+      console.log('post.pictures: ', post.pictures)
+      for(let image of post.pictures) {
+        clearImage(image)
+      }
       return Post.findByIdAndRemove(postId);
     })
     .then((result) => {

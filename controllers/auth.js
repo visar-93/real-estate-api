@@ -73,7 +73,7 @@ exports.login = (req, res, next) => {
           expiresIn: "1h",
         }
       );
-      res.status(200).json({token: token, userId: loadedUser._id.toString()})
+      res.status(200).json({token: token, userId: loadedUser._id.toString()});
     })
     .catch((err) => {
       if (!err.statusCode) {
@@ -81,4 +81,18 @@ exports.login = (req, res, next) => {
       }
       next(err);
     });
+};
+
+exports.logout = (req, res, next) => {
+  const authHeader = req.get('Authorization');
+  console.log(authHeader)
+  const token = authHeader.split(' ')[1];
+  console.log(token)
+  let expiredToken = jwt.verify(token, process.env.AUTH_SECRET_KEY);
+  console.log('expired token: ', expiredToken)
+
+  expiredToken.exp = '1';
+  res.status(201).json({
+    message: "Logged Out."
+  }).redirect('/');  
 };
