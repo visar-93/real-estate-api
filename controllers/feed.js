@@ -3,17 +3,32 @@ const path = require("path");
 const { validationResult } = require("express-validator/check");
 const Post = require("../models/post");
 const User = require("../models/user");
+const { query } = require("express");
 
 // Retrieve all posts
 exports.getPosts = (req, res, next) => {
+  const category = req.query.category;
+  const usage = req.query.usage;
+  const type = req.query.type;
+  const cityP = req.query.city;
+  const maxPrice = req.query.max;
   const currentPage = req.query.page || 1;
   const perPage = 3;
   let totalItems;
-  Post.find()
+
+  const query = {};
+  if (category) query.category_rs = new RegExp(category, "i");
+  if (usage) query.category_usage = new RegExp(usage, "i");
+  if (type) query.property_type = new RegExp(type, "i");
+  if (maxPrice) query.price = {  $lte: maxPrice  };
+  if (cityP) query["address.city"] = cityP;
+
+  Post.find(query)
     .countDocuments()
     .then((count) => {
+      console.log(count);
       totalItems = count;
-      return Post.find()
+      return Post.find(query)
         .skip((currentPage - 1) * perPage)
         .limit(perPage);
     })
@@ -213,15 +228,15 @@ exports.updatePost = (req, res, next) => {
         throw error;
       }
 
-      for(let i = 0; i < pictures.length && i < post.pictures; i++) {
-        if(pictures[i] !== post.pictures[i]) {
-          clearImage(post.pictures[i]);
-        }
-      }
+      // for (let i = 0; i < pictures.length && i < post.pictures.length; i++) {
+      //   if (pictures[i] !== post.pictures[i]) {
+      //     clearImage(post.pictures[i]);
+      //   }
+      // }
 
       // console.log('post.pictures: ', post.pictures)
-      for(let image of post.pictures) {
-        clearImage(image)
+      for (let image of post.pictures) {
+        clearImage(image);
       }
 
       post.title = title;
@@ -276,9 +291,9 @@ exports.deletePost = (req, res, next) => {
         error.statusCode = 403;
         throw error;
       }
-      console.log('post.pictures: ', post.pictures)
-      for(let image of post.pictures) {
-        clearImage(image)
+      console.log("post.pictures: ", post.pictures);
+      for (let image of post.pictures) {
+        clearImage(image);
       }
       return Post.findByIdAndRemove(postId);
     })
