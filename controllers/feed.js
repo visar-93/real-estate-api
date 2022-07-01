@@ -14,6 +14,7 @@ exports.getPosts = (req, res, next) => {
   const maxPrice = req.query.max;
   const currentPage = req.query.page || 1;
   const perPage = 3;
+  const sponsored = req.query.sponsored
   let totalItems;
 
   const query = {};
@@ -22,6 +23,7 @@ exports.getPosts = (req, res, next) => {
   if (type) query.property_type = new RegExp(type, "i");
   if (maxPrice) query.price = {  $lte: maxPrice  };
   if (cityP) query["address.city"] = cityP;
+  if (sponsored) query.sponsored = true;
 
   Post.find(query)
     .countDocuments()
@@ -107,6 +109,7 @@ exports.createPost = (req, res, next) => {
   const category_rs = req.body.category_rs;
   const category_usage = req.body.category_usage;
   const property_type = req.body.property_type;
+  const sponsored = req.body.sponsored;
   const description = req.body.description;
   // console.log('req.files[0]: ', req.files[0].path)
   let pictures = [];
@@ -140,6 +143,7 @@ exports.createPost = (req, res, next) => {
     category_rs: category_rs,
     category_usage: category_usage,
     property_type: property_type,
+    sponsored: sponsored,
     description: description,
     pictures: pictures,
     creator: req.userId,

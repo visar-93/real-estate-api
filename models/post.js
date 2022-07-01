@@ -92,6 +92,10 @@ const postSchema = new Schema(
       type: String,
       required: true,
     },
+    sponsored: {
+      type: Boolean,
+      required: true,
+    },
     description: {
       type: String,
       required: true,
