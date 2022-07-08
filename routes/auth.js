@@ -19,6 +19,12 @@ router.put("/signup", [
   })
   .normalizeEmail(), // this method will remove dots "." from email, sometimes it can cause trou
   body('password').trim().isLength({min: 5}),
+  body("confirmPassword").trim().custom((value, { req }) => {
+    if (value !== req.body.password) {
+      throw new Error("Passwords have to match!");
+    }
+    return true;
+  }),
   body('username').trim().not().isEmpty()  
 ],
 authController.signup);

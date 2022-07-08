@@ -1,9 +1,24 @@
 const fs = require("fs");
 const path = require("path");
 const { validationResult } = require("express-validator/check");
+const dotenv = require("dotenv");
 const Post = require("../models/post");
 const User = require("../models/user");
+dotenv.config();
+const nodemailer = require("nodemailer");
+const sendgridTransport = require("nodemailer-sendgrid-transport");
+const sendgrid = require("@sendgrid/mail");
 const { query } = require("express");
+
+const transporter = nodemailer.createTransport(
+  sendgridTransport({
+    auth: {
+      api_key: process.env.SENDGRID_API_KEY,
+    },
+  })
+);
+
+sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 
 // Retrieve all posts
 exports.getPosts = (req, res, next) => {
@@ -14,14 +29,14 @@ exports.getPosts = (req, res, next) => {
   const maxPrice = req.query.max;
   const currentPage = req.query.page || 1;
   const perPage = 3;
-  const sponsored = req.query.sponsored
+  const sponsored = req.query.sponsored;
   let totalItems;
 
   const query = {};
   if (category) query.category_rs = new RegExp(category, "i");
   if (usage) query.category_usage = new RegExp(usage, "i");
   if (type) query.property_type = new RegExp(type, "i");
-  if (maxPrice) query.price = {  $lte: maxPrice  };
+  if (maxPrice) query.price = { $lte: maxPrice };
   if (cityP) query["address.city"] = cityP;
   if (sponsored) query.sponsored = true;
 
@@ -320,6 +335,7 @@ exports.deletePost = (req, res, next) => {
       next(err);
     });
 };
+
 
 const clearImage = (filePath) => {
   filePath = path.join(__dirname, "..", filePath);

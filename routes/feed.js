@@ -43,4 +43,5 @@ feedController.updatePost
 // DELETE /feed/post/postId - delete a single post
 router.delete('/post/:postId',isAuth, feedController.deletePost);
 
+
 module.exports = router;

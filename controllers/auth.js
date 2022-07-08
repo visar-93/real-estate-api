@@ -96,3 +96,4 @@ exports.logout = (req, res, next) => {
     message: "Logged Out."
   }).redirect('/');  
 };
+
