@@ -12,6 +12,9 @@ router.get('/posts', feedController.getPosts);
 // GET /feed/post/postId - retrieves single post which is selected by id 
 router.get('/post/:postId', feedController.getPost);
 
+// GET /feed/usage/type
+router.get('/usage', feedController.getPostsByUsage);
+
 // POST /feed/post - creates a single post
 router.post('/post', 
 isAuth,

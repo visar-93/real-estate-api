@@ -89,6 +89,50 @@ exports.getPost = (req, res, next) => {
     });
 };
 
+// Retrieve posts based on usage and type
+exports.getPostsByUsage = (req, res, next) => {
+
+  const usage = req.query.usage;
+  const type = req.query.type;
+  let countProperty;
+
+  if(!usage) {
+    const error = new Error("Could not retrieve posts by usage!");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  Post.find({
+    category_usage: usage,
+    property_type: type
+  })
+  .countDocuments()
+  .then((count) => {
+    console.log(count);
+    countProperty = count;
+    return Post.find({
+      category_usage: usage,
+      property_type: type
+    })
+  })
+    .then((posts) => {
+      res.status(200).json({
+        message: "Fetched posts successfully.",
+        property_type: type,
+        posts: posts,
+        countProperty: countProperty
+    });
+  })
+  .catch((err) => {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  });
+};
+
+
+
 // Create a post
 exports.createPost = (req, res, next) => {
   const errors = validationResult(req);
